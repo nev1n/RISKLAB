@@ -46,6 +46,8 @@ architecture behave of RISC_top is
 	type ID_EX_Reg_Type is record
 		alu_opc				: alu_operations;
 		alu_op1,alu_op2		: data_word;
+		dest_reg_no			: integer;
+		dest_reg_wr_flag	: std_logic;
 	end record ID_EX_Reg_Type;	
 	
 	 
@@ -54,19 +56,22 @@ architecture behave of RISC_top is
 		alu_opc				: alu_operations;
 		alu_op1,alu_op2		: data_word;
 		result				: data_word;
+		dest_reg_no			: integer;
+		dest_reg_wr_flag	: std_logic;
 	end record EX_MA_Reg_Type;
 	
 	
 	
 	type MA_WB_Reg_Type is record
 		result				: data_word;
-		--reg_number 			: std_logic_vector(4 downto 0);
+		dest_reg_no			: integer;
+		dest_reg_wr_flag	: std_logic;
 	end record MA_WB_Reg_Type;
 	
 	--the zero records because (others => '0'); doesnt work , notice the => assignement in the contents and NOT <=
-	constant ID_EX_Reg_Type_Default : ID_EX_Reg_Type := (alu_opc => NOP , alu_op1 => ZERO, alu_op2 => ZERO  );
-	constant EX_MA_Reg_Type_Default : EX_MA_Reg_Type := (alu_opc => NOP, alu_op1 => ZERO, alu_op2 => ZERO, result => ZERO );
-	constant MA_WB_Reg_Type_Default : MA_WB_Reg_Type := (result => ZERO);
+	constant ID_EX_Reg_Type_Default : ID_EX_Reg_Type := (alu_opc => NOP , alu_op1 => ZERO, alu_op2 => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0' );
+	constant EX_MA_Reg_Type_Default : EX_MA_Reg_Type := (alu_opc => NOP, alu_op1 => ZERO, alu_op2 => ZERO, result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0' );
+	constant MA_WB_Reg_Type_Default : MA_WB_Reg_Type := (result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0');
 	
 	signal PC 		: data_word;
 	
@@ -106,12 +111,12 @@ begin
 			--end if;
 			--IR <= instr; -- instruction immediately received. simulation
 			IF_ID_Reg <= instr;  -- IR replaced as aditional clk cycle introduced
-			PC <= PC + 1;
+			PC <= PC + WORDSIZE;  -- Adder for the PC, Wordsize defined in lib
 		end if;
 	end process;
 
 	ID_EX: 
-	entity work.decode_logic port map(clk, reset, IF_ID_Reg,id_ex_reg_in.alu_op1,id_ex_reg_in.alu_op2,id_ex_reg_in.alu_opc);
+	entity work.decode_logic port map(clk, reset, IF_ID_Reg,ma_wb_reg_out.dest_reg_no,ma_wb_reg_out.result,ma_wb_reg_out.dest_reg_wr_flag,id_ex_reg_in.alu_op1,id_ex_reg_in.alu_op2,id_ex_reg_in.alu_opc,id_ex_reg_in.dest_reg_no,id_ex_reg_in.dest_reg_wr_flag);
 	process(clk, reset) is
 	begin
 		if reset = '1' then
@@ -134,6 +139,8 @@ begin
 	end process;		
 	
 	ma_wb_reg_in.result <= ex_ma_reg_out.result; -- just forwarding result from stage 3 into 4
+	ma_wb_reg_in.dest_reg_no <= ex_ma_reg_out.dest_reg_no;
+	ma_wb_reg_in.dest_reg_wr_flag <= ex_ma_reg_out.dest_reg_wr_flag;
 	
 	MA_WB: process(clk, reset) is
 	begin

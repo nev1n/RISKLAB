@@ -26,7 +26,10 @@ package RISC_lib is
 	
 	-- Zero vector for initialisation
 	constant ZERO  : DATA_WORD := (others => '0');
-		
+	
+	-- Word size
+	constant WORDSIZE	: DATA_WORD := (0 => '1', others => '0');
+	
 	-- Register file
 	type reg_array is array(natural range <>) of data_word;
 	

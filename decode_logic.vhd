@@ -12,40 +12,57 @@ entity decode_logic is
 		clk           : in std_logic;
 		reset         : in std_logic; -- active high!
 		
-		instr		: in instr_word;
+		instr			: in instr_word;
 		--wr_en		: out std_logic;
+		
+		WB_Rd			: in integer;
+		WB_result		: in data_word;
+		wb_reg_wr_en	: in std_logic;
+		
 		ALU_OP1		: out data_word;
 		ALU_OP2		: out data_word;
-		ALU_OPC		: out alu_operations
+		ALU_OPC		: out alu_operations;
 		
+		ID_rd_no		: out integer;
+		ID_reg_wr_en	: out std_logic	
 	);
 end entity decode_logic;
 
 architecture behave of decode_logic is
 
-	signal reg_no  		: reg_array(31 downto 0);
-	signal rd,rs1,rs2,rs  	: integer;
-	
-	alias imm 		: std_logic_vector(9 downto 0) is instr(9 downto 0);		
+	signal reg_no  			: reg_array(31 downto 0);
+	signal rd,rs1,rs2,rs 	: integer;
+	signal reg_wr_en		: std_logic;
+	alias imm				: std_logic_vector(9 downto 0) is instr(9 downto 0);		
 
 begin
+
 	rd  <= conv_integer(unsigned(instr(14 downto 10)));
-	
 	
 	process(clk, reset)
 	begin
 		if (reset = '1') then
-			reg_no <= (others => ZERO);
+				reg_no <= (others => ZERO);
+				
+		elsif rising_edge (clk) then
+			if (wb_reg_wr_en = '1') then
+				reg_no(WB_Rd) <= WB_result;
+			end if;	
+		end if;
+	end process;
+	
+	
+	process(instr, reset)
+	begin
+		if (reset = '1') then
 			rs1 <= 0;
 			rs2 <= 0;
-			
-			
-		-- stefan says to be safe (latch), and that nothing is hanging and in a latched state
-		--for all out signals
-		--wr_en <= 0;
-		--ALU_OP1 ....
-				
-		else
+		else	
+			-- stefan says to be safe (latch), and that nothing is hanging and in a latched state
+			--for all out signals
+			--wr_en <= 0;
+			--ALU_OP1 ....
+			reg_wr_en <= '0';
 			case instr(20 downto 19) is
 				when OP_REG => 
 					rs1 <= conv_integer(unsigned(instr(9 downto 5)));
@@ -85,19 +102,23 @@ begin
 							ALU_OPC <=SGE;
 						when others =>
 					end case;
-
+					reg_wr_en <= '1';
+				
 				when OP_MEM => 
 					rs <= conv_integer(unsigned(instr(9 downto 5)));
+					
 					case instr(18 downto 15) is
 						when INSTR_LD =>
 						-- enable read by changing write enable to 0
 						--	wr_en <= '0';
+							reg_wr_en <= '1';
 						when INSTR_ST =>
-						--	wr_en <= '1';
+							
 						when others =>
 					end case;
 
 				when OP_IMM => 
+						
 					case instr(18 downto 15) is
 						when INSTR_MVI =>
 							ALU_OPC <= MOV;
@@ -116,7 +137,8 @@ begin
 							ALU_OPC <= SUB;
 						when others => 
 					end case;
-				
+					reg_wr_en <= '1';
+					
 				when OP_JMP => 
 					case instr(18 downto 15) is
 						when INSTR_BEQ =>
@@ -128,10 +150,12 @@ begin
 						when others =>
 					end case;
 
-				when others =>
+				when others => 
 			end case;
+			
+			ID_rd_no <= rd;	
+			ID_reg_wr_en <= reg_wr_en;	
 		end if;
 	end process;
-				 
-
+	
 end architecture behave;
