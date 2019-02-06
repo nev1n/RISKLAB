@@ -69,8 +69,10 @@ architecture behave of RISC_top is
 	end record MA_WB_Reg_Type;
 	
 	--the zero records because (others => '0'); doesnt work , notice the => assignement in the contents and NOT <=
-	constant ID_EX_Reg_Type_Default : ID_EX_Reg_Type := (alu_opc => NOP , alu_op1 => ZERO, alu_op2 => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0' );
-	constant EX_MA_Reg_Type_Default : EX_MA_Reg_Type := (alu_opc => NOP, alu_op1 => ZERO, alu_op2 => ZERO, result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0' );
+	constant ID_EX_Reg_Type_Default : ID_EX_Reg_Type := (alu_opc => NOP , alu_op1 => ZERO, alu_op2 => ZERO, 
+															dest_reg_no => 0, dest_reg_wr_flag => '0' );
+	constant EX_MA_Reg_Type_Default : EX_MA_Reg_Type := (alu_opc => NOP, alu_op1 => ZERO, alu_op2 => ZERO, 
+															result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0' );
 	constant MA_WB_Reg_Type_Default : MA_WB_Reg_Type := (result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0');
 	
 	signal PC 		: data_word;
@@ -116,7 +118,10 @@ begin
 	end process;
 
 	ID_EX: 
-	entity work.decode_logic port map(clk, reset, IF_ID_Reg,ma_wb_reg_out.dest_reg_no,ma_wb_reg_out.result,ma_wb_reg_out.dest_reg_wr_flag,id_ex_reg_in.alu_op1,id_ex_reg_in.alu_op2,id_ex_reg_in.alu_opc,id_ex_reg_in.dest_reg_no,id_ex_reg_in.dest_reg_wr_flag);
+	entity work.decode_logic port map(clk, reset, IF_ID_Reg,ma_wb_reg_out.dest_reg_no,
+										ma_wb_reg_out.result,ma_wb_reg_out.dest_reg_wr_flag,
+										id_ex_reg_in.alu_op1,id_ex_reg_in.alu_op2,id_ex_reg_in.alu_opc,
+										id_ex_reg_in.dest_reg_no,id_ex_reg_in.dest_reg_wr_flag);
 	process(clk, reset) is
 	begin
 		if reset = '1' then
@@ -126,8 +131,12 @@ begin
 		end if;
 	end process;
 
+	ex_ma_reg_in.dest_reg_no <= id_ex_reg_out.dest_reg_no;
+	ex_ma_reg_in.dest_reg_wr_flag <= id_ex_reg_out.dest_reg_wr_flag;
+	
 	EX_MA: 
-	entity work.alu port map (id_ex_reg_out.alu_opc, id_ex_reg_out.alu_op1,id_ex_reg_out.alu_op2, ex_ma_reg_in.result );
+	entity work.alu port map (id_ex_reg_out.alu_opc, id_ex_reg_out.alu_op1,id_ex_reg_out.alu_op2, 
+								ex_ma_reg_in.result );
 	process(clk, reset) is
 	begin
 		if reset = '1' then

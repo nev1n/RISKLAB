@@ -7,10 +7,10 @@ use ieee.numeric_std.all;
 use work.RISC_lib.all;
 
 entity alu is
-    port (alu_opc : in  alu_operations;
-          alu_op1      : in  data_word;
-          alu_op2      : in  data_word;
-          result   : out data_word);
+    port (alu_opc		: in  alu_operations;
+          alu_op1		: in  data_word;
+          alu_op2		: in  data_word;
+          result		: out data_word);
 end entity alu;
 
 architecture behavioral of alu is

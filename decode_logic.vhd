@@ -31,7 +31,7 @@ end entity decode_logic;
 architecture behave of decode_logic is
 
 	signal reg_no  			: reg_array(31 downto 0);
-	signal rd,rs1,rs2,rs 	: integer;
+	signal rd,rs1,rs2,rs 	: integer := 0; -- initialize to zero for decode logic to not be hanging. NOT synthesizable
 	signal reg_wr_en		: std_logic;
 	alias imm				: std_logic_vector(9 downto 0) is instr(9 downto 0);		
 
@@ -52,12 +52,9 @@ begin
 	end process;
 	
 	
-	process(instr, reset)
+	process(instr, rd)  -- rd was not in the sensitivity list in the beginning!
 	begin
-		if (reset = '1') then
-			rs1 <= 0;
-			rs2 <= 0;
-		else	
+			
 			-- stefan says to be safe (latch), and that nothing is hanging and in a latched state
 			--for all out signals
 			--wr_en <= 0;
@@ -153,9 +150,9 @@ begin
 				when others => 
 			end case;
 			
-			ID_rd_no <= rd;	
+			ID_rd_no <= rd;
 			ID_reg_wr_en <= reg_wr_en;	
-		end if;
+		
 	end process;
 	
 end architecture behave;
