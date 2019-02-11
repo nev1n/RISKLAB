@@ -30,10 +30,10 @@ end entity decode_logic;
 
 architecture behave of decode_logic is
 
-	signal reg_no  			: reg_array(31 downto 0);
-	signal rd,rs1,rs2,rs 	: integer := 0; -- initialize to zero for decode logic to not be hanging. NOT synthesizable
-	signal reg_wr_en		: std_logic;
-	alias imm				: std_logic_vector(9 downto 0) is instr(9 downto 0);		
+	signal reg_no  						: reg_array(31 downto 0);
+	signal rd,rs1,rs2,rs 				: integer := 0; -- initialize to zero for decode logic to not be hanging. NOT synthesizable
+	signal reg_wr_en, data_wr_en		: std_logic;
+	alias imm							: std_logic_vector(9 downto 0) is instr(9 downto 0);		
 
 begin
 
@@ -60,6 +60,7 @@ begin
 			--wr_en <= 0;
 			--ALU_OP1 ....
 			reg_wr_en <= '0';
+			data_wr_en <= 0;
 			case instr(20 downto 19) is
 				when OP_REG => 
 					rs1 <= conv_integer(unsigned(instr(9 downto 5)));
