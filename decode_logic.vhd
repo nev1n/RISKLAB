@@ -9,8 +9,8 @@ use work.RISC_lib.all;
 entity decode_logic is
 	port (
 		-- global signals
-		clk           : in std_logic;
-		reset         : in std_logic; -- active high!
+		clk				: in std_logic;
+		reset			: in std_logic; -- active high!
 		
 		instr			: in instr_word;
 		--wr_en		: out std_logic;
@@ -24,7 +24,9 @@ entity decode_logic is
 		ALU_OPC		: out alu_operations;
 		
 		ID_rd_no		: out integer;
-		ID_reg_wr_en	: out std_logic	
+		ID_reg_wr_en	: out std_logic;	
+		
+		data_wr_en		: out std_logic
 	);
 end entity decode_logic;
 
@@ -32,7 +34,7 @@ architecture behave of decode_logic is
 
 	signal reg_no  						: reg_array(31 downto 0);
 	signal rd,rs1,rs2,rs 				: integer := 0; -- initialize to zero for decode logic to not be hanging. NOT synthesizable
-	signal reg_wr_en, data_wr_en		: std_logic;
+	signal reg_wr_en			 		: std_logic;
 	alias imm							: std_logic_vector(9 downto 0) is instr(9 downto 0);		
 
 begin
@@ -60,7 +62,7 @@ begin
 			--wr_en <= 0;
 			--ALU_OP1 ....
 			reg_wr_en <= '0';
-			data_wr_en <= 0;
+			data_wr_en <= '0';
 			case instr(20 downto 19) is
 				when OP_REG => 
 					rs1 <= conv_integer(unsigned(instr(9 downto 5)));
@@ -110,8 +112,9 @@ begin
 						-- enable read by changing write enable to 0
 						--	wr_en <= '0';
 							reg_wr_en <= '1';
+							data_wr_en <= '1';
 						when INSTR_ST =>
-							
+							data_wr_en <= '1';	
 						when others =>
 					end case;
 
@@ -138,6 +141,7 @@ begin
 					reg_wr_en <= '1';
 					
 				when OP_JMP => 
+					rs <= conv_integer(unsigned(instr(9 downto 5)));
 					case instr(18 downto 15) is
 						when INSTR_BEQ =>
 					
