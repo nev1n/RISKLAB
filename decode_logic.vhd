@@ -13,20 +13,24 @@ entity decode_logic is
 		reset			: in std_logic; -- active high!
 		
 		instr			: in instr_word;
-		--wr_en		: out std_logic;
+		
 		
 		WB_Rd			: in integer;
 		WB_result		: in data_word;
 		wb_reg_wr_en	: in std_logic;
 		
-		ALU_OP1		: out data_word;
-		ALU_OP2		: out data_word;
-		ALU_OPC		: out alu_operations;
+		ALU_OP1			: out data_word;
+		ALU_OP2			: out data_word;
+		ALU_OPC			: out alu_operations;
 		
-		ID_rd_no		: out integer;
-		ID_reg_wr_en	: out std_logic;	
+		ID_rd_no		: out integer;			-- alu register write stuff
+		ID_reg_wr_en	: out std_logic;		-- same as above
+		-- wr_en
+		data_wr_en		: out std_logic;		-- wr enable for data access	
+		--data_addr		: out data_word;
 		
-		data_wr_en		: out std_logic
+		memInst_flag	: out std_logic;		-- to detect memtype for data access
+		out_Rd_value	: out data_word			-- for store operation, content of rd
 	);
 end entity decode_logic;
 
@@ -40,6 +44,8 @@ architecture behave of decode_logic is
 begin
 
 	rd  <= conv_integer(unsigned(instr(14 downto 10)));
+	rs1 <= conv_integer(unsigned(instr(9 downto 5)));
+	--data_addr <= (others => '0');
 	
 	process(clk, reset)
 	begin
@@ -54,18 +60,19 @@ begin
 	end process;
 	
 	
-	process(instr, rd)  -- rd was not in the sensitivity list in the beginning!
+	process(instr, rd, rs1 )  -- rd was not in the sensitivity list in the beginning!
 	begin
 			
 			-- stefan says to be safe (latch), and that nothing is hanging and in a latched state
 			--for all out signals
 			--wr_en <= 0;
 			--ALU_OP1 ....
-			reg_wr_en <= '0';
+			reg_wr_en <= '0'; -- whether to touch the register bank for write
 			data_wr_en <= '0';
+			memInst_flag <= '0';
 			case instr(20 downto 19) is
 				when OP_REG => 
-					rs1 <= conv_integer(unsigned(instr(9 downto 5)));
+					--rs1 <= conv_integer(unsigned(instr(9 downto 5)));
 					rs2 <= conv_integer(unsigned(instr(4 downto 0)));
 					ALU_OP1 <= reg_no(rs1);
 					ALU_OP2 <= reg_no(rs2);
@@ -105,16 +112,26 @@ begin
 					reg_wr_en <= '1';
 				
 				when OP_MEM => 
-					rs <= conv_integer(unsigned(instr(9 downto 5)));
-					
+					--rs <= conv_integer(unsigned(instr(9 downto 5)));
+					--data_addr <= (others => '0');
+					--data_addr(4 downto 0) <= instr(9 downto 5);
+					ALU_OPC <= MOV;
+					ALU_OP1 <= reg_no(rs1);
+					ALU_OP2 <= ZERO;
+					memInst_flag <= '1';
 					case instr(18 downto 15) is
 						when INSTR_LD =>
 						-- enable read by changing write enable to 0
 						--	wr_en <= '0';
-							reg_wr_en <= '1';
-							data_wr_en <= '1';
+							reg_wr_en <= '1'; -- write into regbank
+							data_wr_en <= '0';
+							--ALU_OPC <= MOV; -- st* bypass rs1 as result for wb
+							
 						when INSTR_ST =>
-							data_wr_en <= '1';	
+							reg_wr_en <= '0'; -- not needed, as register write is irrelevant, maybe avoid use of flag?
+							data_wr_en <= '1';
+							out_Rd_value <= reg_no(rd);
+							
 						when others =>
 					end case;
 
@@ -141,7 +158,7 @@ begin
 					reg_wr_en <= '1';
 					
 				when OP_JMP => 
-					rs <= conv_integer(unsigned(instr(9 downto 5)));
+					--rs <= conv_integer(unsigned(instr(9 downto 5)));
 					case instr(18 downto 15) is
 						when INSTR_BEQ =>
 					
