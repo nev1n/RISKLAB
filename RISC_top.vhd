@@ -105,6 +105,8 @@ architecture behave of RISC_top is
 	signal ma_wb_reg_in	: MA_WB_Reg_Type;
 	signal ma_wb_reg_out	: MA_WB_Reg_Type;
 	
+	
+	
 begin
 
 	
@@ -126,10 +128,11 @@ begin
 	end process;
 
 	ID_EX: 
-	entity work.decode_logic port map(clk, reset, IF_ID_Reg,ma_wb_reg_out.dest_reg_no,
-										ma_wb_reg_out.result,ma_wb_reg_out.dest_reg_wr_flag,
-										id_ex_reg_in.alu_op1,id_ex_reg_in.alu_op2,id_ex_reg_in.alu_opc,
-										id_ex_reg_in.dest_reg_no,id_ex_reg_in.dest_reg_wr_flag);
+	entity work.decode_logic port map(clk, reset, IF_ID_Reg,
+										ma_wb_reg_out.dest_reg_no, ma_wb_reg_out.result, ma_wb_reg_out.dest_reg_wr_flag,
+										id_ex_reg_in.alu_op1, id_ex_reg_in.alu_op2, id_ex_reg_in.alu_opc,
+										id_ex_reg_in.dest_reg_no, id_ex_reg_in.dest_reg_wr_flag, id_ex_reg_in.data_write_flag,
+										id_ex_reg_in.memInstType_flag, id_ex_reg_in.store_data_addr);
 	process(clk, reset) is
 	begin
 		if reset = '1' then
@@ -139,8 +142,11 @@ begin
 		end if;
 	end process;
 
-	ex_ma_reg_in.dest_reg_no <= id_ex_reg_out.dest_reg_no;
-	ex_ma_reg_in.dest_reg_wr_flag <= id_ex_reg_out.dest_reg_wr_flag;
+	ex_ma_reg_in.dest_reg_no		<= id_ex_reg_out.dest_reg_no;
+	ex_ma_reg_in.dest_reg_wr_flag	<= id_ex_reg_out.dest_reg_wr_flag;
+	ex_ma_reg_in.data_write_flag	<= id_ex_reg_out.data_write_flag;
+	ex_ma_reg_in.memInstType_flag	<= id_ex_reg_out.memInstType_flag;
+	ex_ma_reg_in.store_data_addr	<= id_ex_reg_out.store_data_addr;
 	
 	EX_MA: 
 	entity work.alu port map (id_ex_reg_out.alu_opc, id_ex_reg_out.alu_op1,id_ex_reg_out.alu_op2, 
@@ -157,11 +163,13 @@ begin
 	
 	--ma_wb_reg_in.result <= ex_ma_reg_out.result; -- just forwarding result from stage 3 into 4
 	
-	ma_wb_reg_in.dest_reg_no <= ex_ma_reg_out.dest_reg_no;
-	ma_wb_reg_in.dest_reg_wr_flag <= ex_ma_reg_out.dest_reg_wr_flag;
-	
+	ma_wb_reg_in.dest_reg_no		<= ex_ma_reg_out.dest_reg_no;
+	ma_wb_reg_in.dest_reg_wr_flag	<= ex_ma_reg_out.dest_reg_wr_flag;
+		
 	MA_WB: 
-	--entity work.data_access port map ();
+	entity work.data_access port map (ex_ma_reg_out.result, ex_ma_reg_out.memInstType_flag, ex_ma_reg_out.data_write_flag,
+										ex_ma_reg_out.store_data_addr, data_from_mem, ma_wb_reg_in.result, data_addr,
+										write_en, data_to_mem);
 	process(clk, reset) is
 	begin
 		if reset = '1' then

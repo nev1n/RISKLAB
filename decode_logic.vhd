@@ -19,6 +19,8 @@ entity decode_logic is
 		WB_result		: in data_word;
 		wb_reg_wr_en	: in std_logic;
 		
+		--data_in			: in data_word; 	-- for getting value from data_ld _mem into register, ie for instr load
+		
 		ALU_OP1			: out data_word;
 		ALU_OP2			: out data_word;
 		ALU_OPC			: out alu_operations;
@@ -128,7 +130,7 @@ begin
 							--ALU_OPC <= MOV; -- st* bypass rs1 as result for wb
 							
 						when INSTR_ST =>
-							reg_wr_en <= '0'; -- not needed, as register write is irrelevant, maybe avoid use of flag?
+							reg_wr_en <= '0'; -- needed?!
 							data_wr_en <= '1';
 							out_Rd_value <= reg_no(rd);
 							

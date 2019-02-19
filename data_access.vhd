@@ -21,7 +21,7 @@ entity data_access is
 		
 		result_out			: out data_word;
 		data_addr     		: out data_word;
-		data_ld_from_mem	: out data_word;   -- goes back to the reg bank
+		-- data_ld_from_mem	: out data_word;   -- goes back to the reg bank, us the wb result and rd
 		write_en			: out std_logic;
 		data_to_mem			: out data_word
 		
@@ -39,18 +39,23 @@ begin  -- architecture behavioral
 			result_out <= (others => '0');
 			data_addr <= (others => '0');
 			data_to_mem <= (others => '0');
-			data_ld_from_mem <= (others => '0');
+			--data_ld_from_mem <= (others => '0');
+			
+			write_en <= data_write_en;
 			
 			if (memInstType = '1' and data_write_en = '0') then  --Load operation
 				 data_addr <= result;
-				 data_ld_from_mem <= data_from_mem; 
+				 write_en <= data_write_en;  -- better to keep here
+				 -- data_ld_from_mem <= data_from_mem; --nein!
+				 result_out <= data_from_mem;
 			elsif (memInstType = '1' and data_write_en = '1') then  -- Store operation
 				data_addr <= in_Rd_value;
 				data_to_mem <= result;
+				write_en <= data_write_en; -- redundant but leave here
 			else -- alu operation
 				result_out <= result;  -- alu result might be available one stage early, best to be redirected to prevent race cond.	
 			end if;	
-			write_en <= data_write_en;
+			
 	end process;
 
 end architecture behavioral;		
