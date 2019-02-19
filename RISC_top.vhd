@@ -78,9 +78,11 @@ architecture behave of RISC_top is
 	constant ID_EX_Reg_Type_Default : ID_EX_Reg_Type := (alu_opc => NOP , alu_op1 => ZERO, alu_op2 => ZERO, 
 															dest_reg_no => 0, dest_reg_wr_flag => '0', data_write_flag => '0',
 															memInstType_flag => '0', store_data_addr => ZERO);
+	
 	constant EX_MA_Reg_Type_Default : EX_MA_Reg_Type := (alu_opc => NOP, alu_op1 => ZERO, alu_op2 => ZERO, 
 															result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0', 
 															data_write_flag => '0', memInstType_flag => '0', store_data_addr => ZERO);
+	
 	constant MA_WB_Reg_Type_Default : MA_WB_Reg_Type := (result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0');
 	
 	signal PC 		: data_word;
@@ -90,7 +92,7 @@ architecture behave of RISC_top is
 	
 	signal IF_ID_Reg	: instr_word; -- was instr_word
 
-	signal MA_WB_Reg	: instr_word;
+	--signal MA_WB_Reg	: instr_word;
 	
 	--signal alu_opc_if	: alu_operations;
 	--signal alu_op1_if,alu_op2_if	: instr_word;	
