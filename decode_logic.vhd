@@ -42,15 +42,17 @@ architecture behave of decode_logic is
 	signal rd,rs1,rs2,rs 				: integer := 0; -- initialize to zero for decode logic to not be hanging. NOT synthesizable
 	signal reg_wr_en			 		: std_logic;
 	alias imm							: std_logic_vector(9 downto 0) is instr(9 downto 0);		
-
+	
+	
 begin
-
+	
 	rd  <= conv_integer(unsigned(instr(14 downto 10)));
 	rs1 <= conv_integer(unsigned(instr(9 downto 5)));
 	--data_addr <= (others => '0');
 	
 	process(clk, reset)
 	begin
+		
 		if (reset = '1') then
 				reg_no <= (others => ZERO);
 				
@@ -78,6 +80,7 @@ begin
 					rs2 <= conv_integer(unsigned(instr(4 downto 0)));
 					ALU_OP1 <= reg_no(rs1);
 					ALU_OP2 <= reg_no(rs2);
+					reg_wr_en <= '1'; -- was at the end
 					case instr(18 downto 15) is
 						when INSTR_ADD => 
 							ALU_OPC <=ADD;
@@ -110,8 +113,9 @@ begin
 						when INSTR_SGE =>
 							ALU_OPC <=SGE;
 						when others =>
+							reg_wr_en <= '0'; -- for nop
 					end case;
-					reg_wr_en <= '1';
+					
 				
 				when OP_MEM => 
 					--rs <= conv_integer(unsigned(instr(9 downto 5)));
@@ -163,7 +167,7 @@ begin
 					--rs <= conv_integer(unsigned(instr(9 downto 5)));
 					case instr(18 downto 15) is
 						when INSTR_BEQ =>
-					
+						
 						when INSTR_BNE =>
 						when INSTR_JMP =>
 						when INSTR_CLL =>
