@@ -85,7 +85,7 @@ architecture behave of RISC_top is
 	
 	constant MA_WB_Reg_Type_Default : MA_WB_Reg_Type := (result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0');
 	
-	signal PC 		: data_word;
+	signal PC			:	data_word;
 	
 	--signal IR		: instr_word;
 	--signal PCce		: std_logic;
@@ -114,27 +114,48 @@ begin
 	
 
 -- PUT YOUR CODE HERE!!!!
-	IF_ID: process(clk, reset) is
+
+-- jmpflag and jump address not created
+	
+	PC_IF:
+	
+	process(clk, reset) is
 	begin
 		if reset = '1' then
 			PC <= (others => '0');
+		elsif rising_edge(clk) then
+			if Jmp_Flag = '1' then
+				PC <= Jmpaddress;
+			else	
+				PC <= PC + WORDSIZE;
+			end if;
+			instr_addr <= PC;
+		end if;
+	end process;
+		
+	
+	IF_ID: 
+	
+	process(clk, reset) is
+	begin
+		if reset = '1' then
 			IF_ID_Reg <= (others => '0');
 		elsif rising_edge(clk) then
-			--if PCce <= '1';
-				instr_addr <= PC;	
-			--end if;
-			--IR <= instr; -- instruction immediately received. simulation
 			IF_ID_Reg <= instr;  -- IR replaced as aditional clk cycle introduced
-			PC <= PC + WORDSIZE;  -- Adder for the PC, Wordsize defined in lib
 		end if;
 	end process;
 
-	ID_EX: 
+	
+	ID:
+	
 	entity work.decode_logic port map(clk, reset, IF_ID_Reg,
 										ma_wb_reg_out.dest_reg_no, ma_wb_reg_out.result, ma_wb_reg_out.dest_reg_wr_flag,
 										id_ex_reg_in.alu_op1, id_ex_reg_in.alu_op2, id_ex_reg_in.alu_opc,
 										id_ex_reg_in.dest_reg_no, id_ex_reg_in.dest_reg_wr_flag, id_ex_reg_in.data_write_flag,
 										id_ex_reg_in.memInstType_flag, id_ex_reg_in.store_data_addr);
+	
+	
+	ID_EX: 
 	process(clk, reset) is
 	begin
 		if reset = '1' then
@@ -143,16 +164,22 @@ begin
 			id_ex_reg_out <= id_ex_reg_in;
 		end if;
 	end process;
-
+		
+	
+	EX:
+	
+	entity work.alu port map (id_ex_reg_out.alu_opc, id_ex_reg_out.alu_op1,id_ex_reg_out.alu_op2, 
+								ex_ma_reg_in.result );
+								
 	ex_ma_reg_in.dest_reg_no		<= id_ex_reg_out.dest_reg_no;
 	ex_ma_reg_in.dest_reg_wr_flag	<= id_ex_reg_out.dest_reg_wr_flag;
 	ex_ma_reg_in.data_write_flag	<= id_ex_reg_out.data_write_flag;
 	ex_ma_reg_in.memInstType_flag	<= id_ex_reg_out.memInstType_flag;
 	ex_ma_reg_in.store_data_addr	<= id_ex_reg_out.store_data_addr;
 	
+	
 	EX_MA: 
-	entity work.alu port map (id_ex_reg_out.alu_opc, id_ex_reg_out.alu_op1,id_ex_reg_out.alu_op2, 
-								ex_ma_reg_in.result );
+	
 	process(clk, reset) is
 	begin
 		if reset = '1' then
@@ -164,14 +191,20 @@ begin
 	end process;		
 	
 	--ma_wb_reg_in.result <= ex_ma_reg_out.result; -- just forwarding result from stage 3 into 4
-	
-	ma_wb_reg_in.dest_reg_no		<= ex_ma_reg_out.dest_reg_no;
-	ma_wb_reg_in.dest_reg_wr_flag	<= ex_ma_reg_out.dest_reg_wr_flag;
 		
-	MA_WB: 
+	MA:
+	
 	entity work.data_access port map (ex_ma_reg_out.result, ex_ma_reg_out.memInstType_flag, ex_ma_reg_out.data_write_flag,
 										ex_ma_reg_out.store_data_addr, data_from_mem, ma_wb_reg_in.result, data_addr,
 										write_en, data_to_mem);
+										
+	ma_wb_reg_in.dest_reg_no		<= ex_ma_reg_out.dest_reg_no;
+	ma_wb_reg_in.dest_reg_wr_flag	<= ex_ma_reg_out.dest_reg_wr_flag;
+	
+	
+	
+	MA_WB: 
+	
 	process(clk, reset) is
 	begin
 		if reset = '1' then

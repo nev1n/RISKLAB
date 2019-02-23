@@ -51,25 +51,31 @@ begin  -- architecture behavioral
 				end if;
 			when SNE  =>
 				if uo1 /= uo2 then
-						result <= (0 => '1', others => '0');
+					result <= (0 => '1', others => '0');
 				end if;		
 			when SLT =>
                 if uo1 < uo2 then
-                    result <= "00000000000000000000000000000001";
+					result <= "00000000000000000000000000000001";
 				end if;
 			when SLE =>
 				if uo1 <= uo2 then
-						result <= (0 => '1', others => '0');
+					result <= (0 => '1', others => '0');
 				end if;		
 			when SGT =>
 				if uo1 > uo2 then
-						result <= (0 => '1', others => '0');
+					result <= (0 => '1', others => '0');
 				end if;
 			when SGE => 
 				if uo1 >= uo2 then
-						result <= (0 => '1', others => '0');	
+					result <= (0 => '1', others => '0');	
 				end if;
-            when others  => 
+            when BEQ =>
+				if alu_op2 = ZERO then
+					result <= alu_op1;
+			when BNE
+				if alu_op2 /= ZERO then
+					result <= alu_op1;
+			when others  => 
         end case;
     end process alu_proc;
 
