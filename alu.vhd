@@ -72,9 +72,11 @@ begin  -- architecture behavioral
             when BEQ =>
 				if alu_op2 = ZERO then
 					result <= alu_op1;
+				end if;	
 			when BNE
 				if alu_op2 /= ZERO then
 					result <= alu_op1;
+				end if;	
 			when others  => 
         end case;
     end process alu_proc;

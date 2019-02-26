@@ -34,7 +34,7 @@ package RISC_lib is
 	type reg_array is array(natural range <>) of data_word;
 	
 	-- ALU operations
-	type alu_operations is (NOP,ADD,SUB,AAND,OOR,XXOR,MOV,SSLL,SSRL,SSRA,SEQ,SNE,SLT,SLE,SGT,SGE);
+	type alu_operations is (NOP,ADD,SUB,AAND,OOR,XXOR,MOV,SSLL,SSRL,SSRA,SEQ,SNE,SLT,SLE,SGT,SGE, BNE, BEQ);
 	
 	constant OP_REG : std_logic_vector(1 downto 0) := "00";
 	constant OP_MEM : std_logic_vector(1 downto 0) := "01";

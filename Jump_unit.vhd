@@ -6,12 +6,13 @@ use IEEE.std_logic_unsigned.all;
 use work.RISC_lib.all;
 
 
-entity data_access is
+entity jump_unit is
 	port (
 		
 				
-		result        	: in data_word;   -- can be alu result,address for load or data for store (rs1 diverted through here)
-		memInstType	  	: in std_logic;	  -- flag to detect if mem type instruction
+		decode_jmpflag		: in std_logic;   -- can be alu result,address for load or data for store (rs1 diverted through here)
+		decode_jmpaddress	: in data_word;	  -- flag to detect if mem type instruction
+		
 		data_write_en 	: in std_logic;   -- must connect to external write enable flag
 		in_Rd_value 	: in data_word; -- address for store operation
 		data_from_mem 	: in data_word;		
@@ -19,10 +20,10 @@ entity data_access is
 		result_out			: out data_word;
 		data_addr     		: out data_word;
 		
-		write_en			: out std_logic;
-		data_to_mem			: out data_word
+		jmp_flag			: out std_logic;
+		jmpaddress			: out data_word
 		);
-end entity data_access;
+end entity jump_unit;
 
 architecture behavioral of data_access is
 

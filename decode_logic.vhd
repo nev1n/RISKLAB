@@ -165,6 +165,7 @@ begin
 					
 				when OP_JMP => 
 					--rs <= conv_integer(unsigned(instr(9 downto 5)));
+					--
 					ALU_OP2 <= ZERO;
 					case instr(18 downto 15) is
 						when INSTR_BEQ =>
@@ -176,9 +177,8 @@ begin
 							ALU_OP1 <= reg_no(rd);
 							ALU_OP2 <= reg_no(rs1);
 						when INSTR_JMP =>
-							ALU_OPC <= OOR;
-							ALU_OP1 <= reg_no(rd);
-							ALU_OP2 <= ZERO;
+							decode_jmpflag <= '0';
+							decode_jmpaddress <= reg_no(rd);
 						when INSTR_CLL =>
 					
 						when others =>

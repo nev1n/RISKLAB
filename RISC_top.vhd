@@ -85,37 +85,26 @@ architecture behave of RISC_top is
 	
 	constant MA_WB_Reg_Type_Default : MA_WB_Reg_Type := (result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0');
 	
-	signal PC			:	data_word;
-	
-	--signal IR		: instr_word;
-	--signal PCce		: std_logic;
-	
-	signal IF_ID_Reg	: instr_word; -- was instr_word
+	signal PC				:	data_word;
+	signal IF_ID_Reg		: 	instr_word; -- was instr_word
 
-	--signal MA_WB_Reg	: instr_word;
-	
-	--signal alu_opc_if	: alu_operations;
-	--signal alu_op1_if,alu_op2_if	: instr_word;	
-	
-	signal id_ex_reg_in	: ID_EX_Reg_Type;
-	signal id_ex_reg_out	: ID_EX_Reg_Type;
+	signal id_ex_reg_in		: 	ID_EX_Reg_Type;
+	signal id_ex_reg_out	: 	ID_EX_Reg_Type;
 
-	
-	signal ex_ma_reg_in	: EX_MA_Reg_Type;
+	signal ex_ma_reg_in		: EX_MA_Reg_Type;
 	signal ex_ma_reg_out	: EX_MA_Reg_Type;
 	
-	signal ma_wb_reg_in	: MA_WB_Reg_Type;
+	signal ma_wb_reg_in		: MA_WB_Reg_Type;
 	signal ma_wb_reg_out	: MA_WB_Reg_Type;
 	
-	
+	signal jmp_flag			: std_logic;
+	signal jmpaddress		: data_word;
 	
 begin
 
-	
-
--- PUT YOUR CODE HERE!!!!
-
 -- jmpflag and jump address not created
+	jmp_Flag <= '0';
+	jmpaddress <= ZERO;
 	
 	PC_IF:
 	
@@ -124,8 +113,8 @@ begin
 		if reset = '1' then
 			PC <= (others => '0');
 		elsif rising_edge(clk) then
-			if Jmp_Flag = '1' then
-				PC <= Jmpaddress;
+			if jmp_flag = '1' then
+				PC <= jmpaddress;
 			else	
 				PC <= PC + WORDSIZE;
 			end if;
