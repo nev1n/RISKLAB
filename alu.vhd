@@ -7,10 +7,11 @@ use ieee.numeric_std.all;
 use work.RISC_lib.all;
 
 entity alu is
-    port (alu_opc		: in  alu_operations;
-          alu_op1		: in  data_word;
-          alu_op2		: in  data_word;
-          result		: out data_word);
+    port (alu_opc			: in  alu_operations;
+          alu_op1			: in  data_word;
+          alu_op2			: in  data_word;
+          execute_jmpflag	: out std_logic;
+		  result			: out data_word);
 end entity alu;
 
 architecture behavioral of alu is
@@ -20,12 +21,16 @@ begin  -- architecture behavioral
     -- purpose: arithmetic and logic
     -- type   : combinational
     -- inputs : alu_opc, alu_op1, alu_op2
-    -- outputs: result
-    alu_proc : process (alu_opc, alu_op1, alu_op2) is
+    -- outputs: result , execute_jmpflag
+	
+	
+	
+	alu_proc : process (alu_opc, alu_op1, alu_op2) is
          variable so1, so2 : signed(31 downto 0);
         variable uo1, uo2 : unsigned(31 downto 0);
     begin  -- process alu_proc
         
+		execute_jmpflag <= '0';
 		so1 := signed(alu_op1);
         so2 := signed(alu_op2);
         uo1 := unsigned(alu_op1);
@@ -71,14 +76,17 @@ begin  -- architecture behavioral
 				end if;
             when BEQ =>
 				if alu_op2 = ZERO then
-					result <= alu_op1;
+					result <= alu_op1;		-- result is the branch address
+					execute_jmpflag <= '1'; -- aka branch taken, thus flush previous necessary registers, same for BNE
 				end if;	
-			when BNE
+			when BNE =>
 				if alu_op2 /= ZERO then
-					result <= alu_op1;
+					result <= alu_op1;	
+					execute_jmpflag <= '1';	
 				end if;	
-			when others  => 
-        end case;
+			when others  =>  -- NOP should be covered here 
+				result <= ZERO;
+		end case;
     end process alu_proc;
 
 end architecture behavioral;

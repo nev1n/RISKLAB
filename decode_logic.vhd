@@ -2,7 +2,6 @@ library IEEE;
 use IEEE.std_logic_1164.all; -- import std_logic types
 use IEEE.std_logic_arith.all; -- import add/sub of std_logic_vector
 use IEEE.std_logic_unsigned.all;
---use IEEE.numeric_std.all;
 use work.RISC_lib.all;
 
 
@@ -11,14 +10,13 @@ entity decode_logic is
 		-- global signals
 		clk				: in std_logic;
 		reset			: in std_logic; -- active high!
-		
 		instr			: in instr_word;
-		
-		
+			
 		WB_Rd			: in integer;
 		WB_result		: in data_word;
 		wb_reg_wr_en	: in std_logic;
 		
+		PC				: in data_word;
 		--data_in			: in data_word; 	-- for getting value from data_ld _mem into register, ie for instr load
 		
 		ALU_OP1			: out data_word;
@@ -27,12 +25,13 @@ entity decode_logic is
 		
 		ID_rd_no		: out integer;			-- alu register write stuff
 		ID_reg_wr_en	: out std_logic;		-- same as above
-		-- wr_en
 		data_wr_en		: out std_logic;		-- wr enable for data access	
-		--data_addr		: out data_word;
-		
+				
 		memInst_flag	: out std_logic;		-- to detect memtype for data access
-		out_Rd_value	: out data_word			-- for store operation, content of rd
+		out_Rd_value	: out data_word;			-- for store operation, content of rd
+		
+		decode_jmpflag		: out std_logic;
+		decode_jmpaddress	: out data_word
 	);
 end entity decode_logic;
 
@@ -40,9 +39,9 @@ architecture behave of decode_logic is
 
 	signal reg_no  						: reg_array(31 downto 0);
 	signal rd,rs1,rs2,rs 				: integer := 0; -- initialize to zero for decode logic to not be hanging. NOT synthesizable
-	signal reg_wr_en			 		: std_logic;
+	signal reg_wr_en					: std_logic;
 	alias imm							: std_logic_vector(9 downto 0) is instr(9 downto 0);		
-	
+
 	
 begin
 	
@@ -69,18 +68,21 @@ begin
 			
 			-- stefan says to be safe (latch), and that nothing is hanging and in a latched state
 			--for all out signals
-			--wr_en <= 0;
-			--ALU_OP1 ....
-			reg_wr_en <= '0'; -- whether to touch the register bank for write
-			data_wr_en <= '0';
-			memInst_flag <= '0';
+			
+			reg_wr_en 			<= '0'; -- whether to touch the register bank for write
+			data_wr_en 			<= '0';
+			memInst_flag 		<= '0';
+			decode_jmpflag 		<= '0';
+			decode_jmpaddress 	<= ZERO;
+			
 			case instr(20 downto 19) is
 				when OP_REG => 
-					--rs1 <= conv_integer(unsigned(instr(9 downto 5)));
+					
 					rs2 <= conv_integer(unsigned(instr(4 downto 0)));
 					ALU_OP1 <= reg_no(rs1);
 					ALU_OP2 <= reg_no(rs2);
 					reg_wr_en <= '1'; -- was at the end
+					
 					case instr(18 downto 15) is
 						when INSTR_ADD => 
 							ALU_OPC <=ADD;
@@ -116,15 +118,13 @@ begin
 							reg_wr_en <= '0'; -- for nop
 					end case;
 					
-				
 				when OP_MEM => 
-					--rs <= conv_integer(unsigned(instr(9 downto 5)));
-					--data_addr <= (others => '0');
-					--data_addr(4 downto 0) <= instr(9 downto 5);
+					
 					ALU_OPC <= MOV;
 					ALU_OP1 <= reg_no(rs1);
 					ALU_OP2 <= ZERO;
 					memInst_flag <= '1';
+					
 					case instr(18 downto 15) is
 						when INSTR_LD =>
 						-- enable read by changing write enable to 0
@@ -164,9 +164,7 @@ begin
 					reg_wr_en <= '1';
 					
 				when OP_JMP => 
-					--rs <= conv_integer(unsigned(instr(9 downto 5)));
-					--
-					ALU_OP2 <= ZERO;
+					
 					case instr(18 downto 15) is
 						when INSTR_BEQ =>
 							ALU_OPC <= BEQ;
@@ -177,10 +175,16 @@ begin
 							ALU_OP1 <= reg_no(rd);
 							ALU_OP2 <= reg_no(rs1);
 						when INSTR_JMP =>
-							decode_jmpflag <= '0';
+							ALU_OPC <= NOP;
+							decode_jmpflag <= '1';
 							decode_jmpaddress <= reg_no(rd);
 						when INSTR_CLL =>
-					
+							ALU_OPC <= OOR;
+							ALU_OP1	<= PC;
+							ALU_OP2 <= ZERO;
+							reg_wr_en <= '1';
+							decode_jmpflag <= '1';
+							decode_jmpaddress <= reg_no(rd);
 						when others =>
 					end case;
 

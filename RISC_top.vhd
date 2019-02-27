@@ -67,44 +67,63 @@ architecture behave of RISC_top is
 	end record EX_MA_Reg_Type;
 	
 	
-	
+	-- type for WB pipeline register
 	type MA_WB_Reg_Type is record
 		result				: data_word;
 		dest_reg_no			: integer;
 		dest_reg_wr_flag	: std_logic;
 	end record MA_WB_Reg_Type;
 	
+	-- type for jump signals handling, jmp type instructions via unit
+	type jmp_signals_type is record
+		flag, decodeflag, executeflag			: std_logic;
+		address, decodeaddress, result			: data_word;
+	end record jmp_signals_type;
+	
+	
 	--the zero records because (others => '0'); doesnt work , notice the => assignement in the contents and NOT <=
-	constant ID_EX_Reg_Type_Default : ID_EX_Reg_Type := (alu_opc => NOP , alu_op1 => ZERO, alu_op2 => ZERO, 
+	constant ID_EX_Reg_Type_Default 	: ID_EX_Reg_Type := (alu_opc => NOP , alu_op1 => ZERO, alu_op2 => ZERO, 
 															dest_reg_no => 0, dest_reg_wr_flag => '0', data_write_flag => '0',
 															memInstType_flag => '0', store_data_addr => ZERO);
 	
-	constant EX_MA_Reg_Type_Default : EX_MA_Reg_Type := (alu_opc => NOP, alu_op1 => ZERO, alu_op2 => ZERO, 
+	constant EX_MA_Reg_Type_Default 	: EX_MA_Reg_Type := (alu_opc => NOP, alu_op1 => ZERO, alu_op2 => ZERO, 
 															result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0', 
 															data_write_flag => '0', memInstType_flag => '0', store_data_addr => ZERO);
 	
-	constant MA_WB_Reg_Type_Default : MA_WB_Reg_Type := (result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0');
+	constant MA_WB_Reg_Type_Default 	: MA_WB_Reg_Type := (result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0');
 	
-	signal PC				:	data_word;
-	signal IF_ID_Reg		: 	instr_word; -- was instr_word
+	constant jmp_signals_type_Default	: jmp_signals_type := (flag => '0', decodeflag => '0', executeflag => '0',
+																address => ZERO, decodeaddress => ZERO, result => ZERO);
+	
+	signal PC							: data_word;
+	signal IF_ID_Reg					: instr_word; -- was instr_word
 
-	signal id_ex_reg_in		: 	ID_EX_Reg_Type;
-	signal id_ex_reg_out	: 	ID_EX_Reg_Type;
+	signal id_ex_reg_in					: ID_EX_Reg_Type;
+	signal id_ex_reg_out				: ID_EX_Reg_Type;
 
-	signal ex_ma_reg_in		: EX_MA_Reg_Type;
-	signal ex_ma_reg_out	: EX_MA_Reg_Type;
+	signal ex_ma_reg_in					: EX_MA_Reg_Type;
+	signal ex_ma_reg_out				: EX_MA_Reg_Type;
 	
-	signal ma_wb_reg_in		: MA_WB_Reg_Type;
-	signal ma_wb_reg_out	: MA_WB_Reg_Type;
+	signal ma_wb_reg_in					: MA_WB_Reg_Type;
+	signal ma_wb_reg_out				: MA_WB_Reg_Type;
 	
-	signal jmp_flag			: std_logic;
-	signal jmpaddress		: data_word;
+	signal jmp							: jmp_signals_type;
+	signal flush_decode, flush_fetch	: std_logic;
+	
+
 	
 begin
 
--- jmpflag and jump address not created
-	jmp_Flag <= '0';
-	jmpaddress <= ZERO;
+	--jmp 			<= jmp_signals_type_Default;  -- beware! alu result is connected here, for convenience of mapping reasons
+	--flush_fetch		<= '0';
+	--flush_decode	<= '0';
+		
+	JUMP:
+	
+	entity work.jump_unit port map(jmp.decodeflag, jmp.decodeaddress,
+									jmp.executeflag, jmp.result,
+									jmp.flag, jmp.address,
+									flush_fetch, flush_decode);
 	
 	PC_IF:
 	
@@ -113,8 +132,8 @@ begin
 		if reset = '1' then
 			PC <= (others => '0');
 		elsif rising_edge(clk) then
-			if jmp_flag = '1' then
-				PC <= jmpaddress;
+			if jmp.flag = '1' then
+				PC <= jmp.address;
 			else	
 				PC <= PC + WORDSIZE;
 			end if;
@@ -130,7 +149,11 @@ begin
 		if reset = '1' then
 			IF_ID_Reg <= (others => '0');
 		elsif rising_edge(clk) then
-			IF_ID_Reg <= instr;  -- IR replaced as aditional clk cycle introduced
+			if flush_fetch = '1' then
+				IF_ID_Reg <= (others => '0');
+			else
+				IF_ID_Reg <= instr;  -- IR replaced as aditional clk cycle introduced
+			end if;
 		end if;
 	end process;
 
@@ -139,9 +162,11 @@ begin
 	
 	entity work.decode_logic port map(clk, reset, IF_ID_Reg,
 										ma_wb_reg_out.dest_reg_no, ma_wb_reg_out.result, ma_wb_reg_out.dest_reg_wr_flag,
+										PC, 
 										id_ex_reg_in.alu_op1, id_ex_reg_in.alu_op2, id_ex_reg_in.alu_opc,
 										id_ex_reg_in.dest_reg_no, id_ex_reg_in.dest_reg_wr_flag, id_ex_reg_in.data_write_flag,
-										id_ex_reg_in.memInstType_flag, id_ex_reg_in.store_data_addr);
+										id_ex_reg_in.memInstType_flag, id_ex_reg_in.store_data_addr,
+										jmp.decodeflag, jmp.decodeaddress);
 	
 	
 	ID_EX: 
@@ -150,7 +175,11 @@ begin
 		if reset = '1' then
 			id_ex_reg_out <= ID_EX_Reg_Type_Default; -- because its an effin record
 		elsif rising_edge(clk) then
-			id_ex_reg_out <= id_ex_reg_in;
+			if flush_decode = '1' then
+					id_ex_reg_out <= ID_EX_Reg_Type_Default;
+			else
+				id_ex_reg_out <= id_ex_reg_in;
+			end if;	
 		end if;
 	end process;
 		
@@ -158,8 +187,10 @@ begin
 	EX:
 	
 	entity work.alu port map (id_ex_reg_out.alu_opc, id_ex_reg_out.alu_op1,id_ex_reg_out.alu_op2, 
-								ex_ma_reg_in.result );
-								
+								jmp.executeflag, ex_ma_reg_in.result );
+	
+	jmp.result						<= ex_ma_reg_in.result; -- alu result contains beq or bne jump address if taken
+	
 	ex_ma_reg_in.dest_reg_no		<= id_ex_reg_out.dest_reg_no;
 	ex_ma_reg_in.dest_reg_wr_flag	<= id_ex_reg_out.dest_reg_wr_flag;
 	ex_ma_reg_in.data_write_flag	<= id_ex_reg_out.data_write_flag;

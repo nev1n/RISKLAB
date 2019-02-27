@@ -8,8 +8,6 @@ use work.RISC_lib.all;
 
 entity data_access is
 	port (
-		
-				
 		result        	: in data_word;   -- can be alu result,address for load or data for store (rs1 diverted through here)
 		memInstType	  	: in std_logic;	  -- flag to detect if mem type instruction
 		data_write_en 	: in std_logic;   -- must connect to external write enable flag
@@ -31,21 +29,23 @@ begin  -- architecture behavioral
 	process (result, memInstType, data_write_en, in_Rd_value, data_from_mem) -- (stefan) add all right side parts of assignments to sensitivity list
     begin  -- process alu_proc
 			
-			result_out <= (others => '0');
-			data_addr <= (others => '0');
-			data_to_mem <= (others => '0');
-			
-			if (memInstType = '1' and data_write_en = '0') then  --Load operation
-				 data_addr <= result;
-				 write_en <= data_write_en;  -- better to keep here
-				 result_out <= data_from_mem;
-			elsif (memInstType = '1' and data_write_en = '1') then  -- Store operation
-				data_addr <= in_Rd_value;
-				data_to_mem <= result;
-				write_en <= data_write_en; --  but leave here
-			else -- alu operation
-				result_out <= result;  -- alu result might be available one stage early, best to be redirected to prevent race cond.	
-			end if;	
+		result_out <= (others => '0');
+		data_addr <= (others => '0');
+		data_to_mem <= (others => '0');
+		write_en <= '0';
+		
+		if (memInstType = '1' and data_write_en = '0') then  --Load operation
+			 data_addr <= result;
+			 write_en <= data_write_en;  -- better to keep here
+			 result_out <= data_from_mem;
+		elsif (memInstType = '1' and data_write_en = '1') then  -- Store operation
+			data_addr <= in_Rd_value;
+			data_to_mem <= result;
+			write_en <= data_write_en; --  but leave here
+		else -- alu operation
+			result_out <= result;  -- alu result might be available one stage early, best to be redirected to prevent race cond.	
+		end if;	
+	
 	end process;
 
 end architecture behavioral;		
