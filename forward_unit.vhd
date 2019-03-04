@@ -31,17 +31,17 @@ architecture behavioral of forward_unit is
 begin
 	process (id_ex_rs1, id_ex_rs2, id_ex_op1, id_ex_op2, ex_mem_reg_wr, ex_mem_reg_no, ex_mem_result, mem_wb_reg_wr, mem_wb_reg_no, mem_wb_result )
 	begin
-		if ex_mem_reg_wr = '1' and ex_mem_reg_no = id_ex_rs1 then
+		if ((ex_mem_reg_wr = '1') and (ex_mem_reg_no = id_ex_rs1)) then
 			alu_op1 <= ex_mem_result;
-		elsif mem_wb_reg_wr = '1' and mem_wb_reg_no = id_ex_rs1 then
+		elsif ((mem_wb_reg_wr = '1') and (mem_wb_reg_no = id_ex_rs1)) then
 			alu_op1 <= mem_wb_result;
 		else
 			alu_op1 <= id_ex_op1;
 		end if;
 		
-		if ex_mem_reg_wr = '1' and ex_mem_reg_no = id_ex_rs2 then
+		if ((ex_mem_reg_wr = '1') and (ex_mem_reg_no = id_ex_rs2)) then
 			alu_op2 <= ex_mem_result;
-		elsif mem_wb_reg_wr = '1' and mem_wb_reg_no = id_ex_rs2 then
+		elsif ((mem_wb_reg_wr = '1') and (mem_wb_reg_no = id_ex_rs2)) then
 			alu_op2 <= mem_wb_result;
 		else
 			alu_op2 <= id_ex_op2;

@@ -30,7 +30,7 @@ begin  -- architecture behavioral
         variable uo1, uo2 : unsigned(31 downto 0);
     begin  -- process alu_proc
         
-		execute_jmpflag <= '0';
+		
 		so1 := signed(alu_op1);
         so2 := signed(alu_op2);
         uo1 := unsigned(alu_op1);
@@ -86,6 +86,7 @@ begin  -- architecture behavioral
 				end if;	
 			when others  =>  -- NOP should be covered here 
 				result <= ZERO;
+				execute_jmpflag <= '0';
 		end case;
     end process alu_proc;
 

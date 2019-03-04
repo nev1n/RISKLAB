@@ -50,6 +50,7 @@ begin
 	
 	rd  <= conv_integer(unsigned(instr(14 downto 10)));
 	rs1 <= conv_integer(unsigned(instr(9 downto 5)));
+	rs2 <= conv_integer(unsigned(instr(4 downto 0)));
 	--data_addr <= (others => '0');
 
 	--register set 0 to 31
@@ -67,7 +68,7 @@ begin
 	end process;
 	
 	-- decode logic
-	process(instr, rd, rs1 )  -- rd was not in the sensitivity list in the beginning!
+	process(instr, rd, rs1, rs2 )  -- rd was not in the sensitivity list in the beginning!
 	begin
 			
 			-- stefan says to be safe (latch), and that nothing is hanging and in a latched state
@@ -78,11 +79,14 @@ begin
 			memInst_flag 		<= '0';
 			decode_jmpflag 		<= '0';
 			decode_jmpaddress 	<= ZERO;
+			ALU_OPC 			<= NOP;
+			rs_1 <= rs1;
+			rs_2 <= rs2;
 			
 			case instr(20 downto 19) is
 				when OP_REG => 
 					
-					rs2 <= conv_integer(unsigned(instr(4 downto 0)));
+					
 					ALU_OP1 <= reg_no(rs1);
 					ALU_OP2 <= reg_no(rs2);
 					reg_wr_en <= '1'; -- was at the end
@@ -120,6 +124,7 @@ begin
 							ALU_OPC <=SGE;
 						when others =>
 							reg_wr_en <= '0'; -- for nop
+							ALU_OPC <= NOP; --!!
 					end case;
 					
 				when OP_MEM => 
@@ -136,13 +141,19 @@ begin
 							reg_wr_en <= '1'; -- write into regbank
 							data_wr_en <= '0';
 							--ALU_OPC <= MOV; -- st* bypass rs1 as result for wb
+							--rs_1 <= rs1;  -- this also not needed as default covers it?
+							--rs_2 <= rs1;
 							
 						when INSTR_ST =>
 							reg_wr_en <= '0'; -- needed?!
 							data_wr_en <= '1';
 							out_Rd_value <= reg_no(rd);
 							
+							rs_1 <= rd;
+							rs_2 <= rs1;
+							
 						when others =>
+							ALU_OPC <= NOP; --!!
 					end case;
 
 				when OP_IMM => 
@@ -164,6 +175,7 @@ begin
 							ALU_OP2(9 downto 0) <= imm;
 							ALU_OPC <= SUB;
 						when others => 
+							ALU_OPC <= NOP; --!!
 					end case;
 					reg_wr_en <= '1';
 					
@@ -174,10 +186,14 @@ begin
 							ALU_OPC <= BEQ;
 							ALU_OP1 <= reg_no(rd);
 							ALU_OP2 <= reg_no(rs1);
+							rs_1 <= rd;
+							rs_2 <= rs1;			
 						when INSTR_BNE =>
 							ALU_OPC <= BNE;
 							ALU_OP1 <= reg_no(rd);
 							ALU_OP2 <= reg_no(rs1);
+							rs_1 <= rd;
+							rs_2 <= rs1;
 						when INSTR_JMP =>
 							ALU_OPC <= NOP;
 							decode_jmpflag <= '1';
@@ -189,7 +205,10 @@ begin
 							reg_wr_en <= '1';
 							decode_jmpflag <= '1';
 							decode_jmpaddress <= reg_no(rd);
+							rs_1 <= rd;
+							rs_2 <= rs1;
 						when others =>
+							ALU_OPC <= NOP; --!!
 					end case;
 
 				when others => 
@@ -198,8 +217,7 @@ begin
 			ID_rd_no <= rd;
 			ID_reg_wr_en <= reg_wr_en;	
 			
-			rs_1 <= rs1;
-			rs_2 <= rs2;
+			
 	end process;
 	
 end architecture behave;

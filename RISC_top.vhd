@@ -135,14 +135,14 @@ begin
 			PC <= (others => '0');
 		elsif rising_edge(clk) then
 			if jmp.flag = '1' then
-				PC <= jmp.address;
+				PC <= jmp.address;  -- signals updated only at the end of the process!
 			else	
 				PC <= PC + WORDSIZE;
 			end if;
-			instr_addr <= PC;
+			
 		end if;
 	end process;
-		
+	instr_addr <= PC; 	
 	
 	IF_ID: 
 	
@@ -190,7 +190,7 @@ begin
 	
 	EX:
 	
-	entity work.alu port map (id_ex_reg_out.alu_opc, id_ex_reg_out.alu_op1,id_ex_reg_out.alu_op2, 
+	entity work.alu port map (id_ex_reg_out.alu_opc, fwd_alu_op1, fwd_alu_op2, 
 								jmp.executeflag, ex_ma_reg_in.result );
 	
 	jmp.result						<= ex_ma_reg_in.result; -- alu result contains beq or bne jump address if taken
