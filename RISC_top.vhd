@@ -51,6 +51,7 @@ architecture behave of RISC_top is
 		data_write_flag		: std_logic;
 		memInstType_flag	: std_logic;
 		store_data_addr		: data_word;
+		rs1, rs2			: integer;
 	end record ID_EX_Reg_Type;	
 	
 	 
@@ -83,14 +84,15 @@ architecture behave of RISC_top is
 	
 	--the zero records because (others => '0'); doesnt work , notice the => assignement in the contents and NOT <=
 	constant ID_EX_Reg_Type_Default 	: ID_EX_Reg_Type := (alu_opc => NOP , alu_op1 => ZERO, alu_op2 => ZERO, 
-															dest_reg_no => 0, dest_reg_wr_flag => '0', data_write_flag => '0',
-															memInstType_flag => '0', store_data_addr => ZERO);
+															dest_reg_no => 33, dest_reg_wr_flag => '0', data_write_flag => '0',
+															memInstType_flag => '0', store_data_addr => ZERO,
+															rs1 => 33, rs2 => 33);
 	
 	constant EX_MA_Reg_Type_Default 	: EX_MA_Reg_Type := (alu_opc => NOP, alu_op1 => ZERO, alu_op2 => ZERO, 
-															result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0', 
+															result => ZERO, dest_reg_no => 33, dest_reg_wr_flag => '0', 
 															data_write_flag => '0', memInstType_flag => '0', store_data_addr => ZERO);
 	
-	constant MA_WB_Reg_Type_Default 	: MA_WB_Reg_Type := (result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0');
+	constant MA_WB_Reg_Type_Default 	: MA_WB_Reg_Type := (result => ZERO, dest_reg_no => 33, dest_reg_wr_flag => '0');
 	
 	constant jmp_signals_type_Default	: jmp_signals_type := (flag => '0', decodeflag => '0', executeflag => '0',
 																address => ZERO, decodeaddress => ZERO, result => ZERO);
@@ -109,7 +111,7 @@ architecture behave of RISC_top is
 	
 	signal jmp							: jmp_signals_type;
 	signal flush_decode, flush_fetch	: std_logic;
-	
+	signal fwd_alu_op1, fwd_alu_op2		: data_word;
 
 	
 begin
@@ -118,7 +120,7 @@ begin
 	--flush_fetch		<= '0';
 	--flush_decode	<= '0';
 		
-	JUMP:
+	JMP_UNIT:
 	
 	entity work.jump_unit port map(jmp.decodeflag, jmp.decodeaddress,
 									jmp.executeflag, jmp.result,
@@ -166,7 +168,9 @@ begin
 										id_ex_reg_in.alu_op1, id_ex_reg_in.alu_op2, id_ex_reg_in.alu_opc,
 										id_ex_reg_in.dest_reg_no, id_ex_reg_in.dest_reg_wr_flag, id_ex_reg_in.data_write_flag,
 										id_ex_reg_in.memInstType_flag, id_ex_reg_in.store_data_addr,
-										jmp.decodeflag, jmp.decodeaddress);
+										jmp.decodeflag, jmp.decodeaddress,
+										id_ex_reg_in.rs1, id_ex_reg_in.rs2
+										);
 	
 	
 	ID_EX: 
@@ -197,6 +201,15 @@ begin
 	ex_ma_reg_in.memInstType_flag	<= id_ex_reg_out.memInstType_flag;
 	ex_ma_reg_in.store_data_addr	<= id_ex_reg_out.store_data_addr;
 	
+	
+	FWD_UNIT:
+	entity work.forward_unit port map (id_ex_reg_out.rs1, id_ex_reg_out.rs2,
+										id_ex_reg_out.alu_op1, id_ex_reg_out.alu_op2,
+										ex_ma_reg_out.dest_reg_wr_flag, ex_ma_reg_out.dest_reg_no, ex_ma_reg_out.result,
+										ma_wb_reg_out.dest_reg_wr_flag, ma_wb_reg_out.dest_reg_no, ma_wb_reg_out.result,
+										fwd_alu_op1, fwd_alu_op2		
+										);
+									
 	
 	EX_MA: 
 	

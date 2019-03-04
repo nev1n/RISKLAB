@@ -31,7 +31,10 @@ entity decode_logic is
 		out_Rd_value	: out data_word;			-- for store operation, content of rd
 		
 		decode_jmpflag		: out std_logic;
-		decode_jmpaddress	: out data_word
+		decode_jmpaddress	: out data_word;
+	
+		rs_1			: out integer;
+		rs_2			: out integer
 	);
 end entity decode_logic;
 
@@ -48,7 +51,8 @@ begin
 	rd  <= conv_integer(unsigned(instr(14 downto 10)));
 	rs1 <= conv_integer(unsigned(instr(9 downto 5)));
 	--data_addr <= (others => '0');
-	
+
+	--register set 0 to 31
 	process(clk, reset)
 	begin
 		
@@ -62,7 +66,7 @@ begin
 		end if;
 	end process;
 	
-	
+	-- decode logic
 	process(instr, rd, rs1 )  -- rd was not in the sensitivity list in the beginning!
 	begin
 			
@@ -193,7 +197,9 @@ begin
 			
 			ID_rd_no <= rd;
 			ID_reg_wr_en <= reg_wr_en;	
-		
+			
+			rs_1 <= rs1;
+			rs_2 <= rs2;
 	end process;
 	
 end architecture behave;
