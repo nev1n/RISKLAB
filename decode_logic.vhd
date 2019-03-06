@@ -30,8 +30,8 @@ entity decode_logic is
 		memInst_flag	: out std_logic;		-- to detect memtype for data access
 		out_Rd_value	: out data_word;			-- for store operation, content of rd
 		
-		decode_jmpflag		: out std_logic;
-		decode_jmpaddress	: out data_word;
+		-- decode jumpflag and address doesnt exist anymor
+		-- restructure forwarding to ID, for performance gain on JMP and CALL
 	
 		rs_1			: out integer;
 		rs_2			: out integer
@@ -77,11 +77,14 @@ begin
 			reg_wr_en 			<= '0'; -- whether to touch the register bank for write
 			data_wr_en 			<= '0';
 			memInst_flag 		<= '0';
-			decode_jmpflag 		<= '0';
-			decode_jmpaddress 	<= ZERO;
+			--decode_jmpflag 		<= '0';
+			--decode_jmpaddress 	<= ZERO;
 			ALU_OPC 			<= NOP;
+			ALU_OP1 <= ZERO;
+			ALU_OP2 <= ZERO;
 			rs_1 <= rs1;
 			rs_2 <= rs2;
+			out_Rd_value <= ZERO;
 			
 			case instr(20 downto 19) is
 				when OP_REG => 
@@ -181,37 +184,38 @@ begin
 					
 				when OP_JMP => 
 					
+					rs_1 <= rd;
+					rs_2 <= rs1;
+					
 					case instr(18 downto 15) is
 						when INSTR_BEQ =>
 							ALU_OPC <= BEQ;
 							ALU_OP1 <= reg_no(rd);
 							ALU_OP2 <= reg_no(rs1);
-							rs_1 <= rd;
-							rs_2 <= rs1;			
+										
 						when INSTR_BNE =>
 							ALU_OPC <= BNE;
 							ALU_OP1 <= reg_no(rd);
 							ALU_OP2 <= reg_no(rs1);
-							rs_1 <= rd;
-							rs_2 <= rs1;
+							
 						when INSTR_JMP =>
-							ALU_OPC <= NOP;
-							decode_jmpflag <= '1';
-							decode_jmpaddress <= reg_no(rd);
-						when INSTR_CLL =>
-							ALU_OPC <= OOR;
-							ALU_OP1	<= PC;
+							ALU_OPC <= JMP;
+							ALU_OP1 <= reg_no(rd);
 							ALU_OP2 <= ZERO;
+							
+						when INSTR_CLL =>
+							ALU_OPC <= CALL;
+							ALU_OP1	<= reg_no(rd);  -- this is forwarded
+							ALU_OP2 <= PC; -- the address to be saved
+							
 							reg_wr_en <= '1';
-							decode_jmpflag <= '1';
-							decode_jmpaddress <= reg_no(rd);
-							rs_1 <= rd;
-							rs_2 <= rs1;
+							
 						when others =>
 							ALU_OPC <= NOP; --!!
 					end case;
 
 				when others => 
+					--ALU_OPC <= NOP; --!!
 			end case;
 			
 			ID_rd_no <= rd;

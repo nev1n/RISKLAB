@@ -30,7 +30,7 @@ begin  -- architecture behavioral
         variable uo1, uo2 : unsigned(31 downto 0);
     begin  -- process alu_proc
         
-		
+		execute_jmpflag <= '0';
 		so1 := signed(alu_op1);
         so2 := signed(alu_op2);
         uo1 := unsigned(alu_op1);
@@ -84,6 +84,13 @@ begin  -- architecture behavioral
 					result <= alu_op1;	
 					execute_jmpflag <= '1';	
 				end if;	
+			when JMP =>
+				--result <= alu_op1; forwarded alu_op1 is jump address, this is a waste for CALL and JMP. Pipeline
+				-- needs to be restructured and operands forwarded to ID to improve this performance snag.
+				execute_jmpflag <= '1';
+			when CALL =>
+				result <= alu_op2;   -- current PC jmp addres 
+				execute_jmpflag <= '1';
 			when others  =>  -- NOP should be covered here 
 				result <= ZERO;
 				execute_jmpflag <= '0';
