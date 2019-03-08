@@ -152,6 +152,8 @@ begin
 							--ALU_OPC <= MOV; -- st* bypass rs1 as result for wb
 							--rs_1 <= rs1;  -- this also not needed as default covers it?
 							--rs_2 <= rs1;
+							rs_1 <= rd;
+							rs_2 <= rs1;
 							
 						when INSTR_ST =>
 							reg_wr_en <= '0'; -- needed?!
