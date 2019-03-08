@@ -76,18 +76,19 @@ begin  -- architecture behavioral
 				end if;
             when BEQ =>
 				if alu_op2 = ZERO then
-					result <= alu_op1;		-- result is the branch address
+					--result <= alu_op1;		-- result is the branch address
 					execute_jmpflag <= '1'; -- aka branch taken, thus flush previous necessary registers, same for BNE
 				end if;	
 			when BNE =>
 				if alu_op2 /= ZERO then
-					result <= alu_op1;	
+					--result <= alu_op1;	
 					execute_jmpflag <= '1';	
 				end if;	
 			when JMP =>
 				--result <= alu_op1; forwarded alu_op1 is jump address, this is a waste for CALL and JMP. Pipeline
 				-- needs to be restructured and operands forwarded to ID to improve this performance snag.
 				execute_jmpflag <= '1';
+				
 			when CALL =>
 				result <= alu_op2;   -- current PC jmp addres 
 				execute_jmpflag <= '1';

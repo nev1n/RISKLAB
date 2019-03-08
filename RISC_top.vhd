@@ -51,7 +51,6 @@ architecture behave of RISC_top is
 		data_write_flag		: std_logic;
 		memInstType_flag	: std_logic;
 		store_data_addr		: data_word;
-		rs1, rs2			: integer;
 	end record ID_EX_Reg_Type;	
 	
 	 
@@ -85,8 +84,7 @@ architecture behave of RISC_top is
 	--the zero records because (others => '0'); doesnt work , notice the => assignement in the contents and NOT <=
 	constant ID_EX_Reg_Type_Default 	: ID_EX_Reg_Type := (alu_opc => NOP , alu_op1 => ZERO, alu_op2 => ZERO, 
 															dest_reg_no => 0, dest_reg_wr_flag => '0', data_write_flag => '0',
-															memInstType_flag => '0', store_data_addr => ZERO,
-															rs1 => 0, rs2 => 0);
+															memInstType_flag => '0', store_data_addr => ZERO);
 	
 	constant EX_MA_Reg_Type_Default 	: EX_MA_Reg_Type := (alu_opc => NOP, alu_op1 => ZERO, alu_op2 => ZERO, 
 															result => ZERO, dest_reg_no => 0, dest_reg_wr_flag => '0', 
@@ -111,7 +109,9 @@ architecture behave of RISC_top is
 	
 	signal jmp							: jmp_signals_type;
 	signal flush_decode, flush_fetch	: std_logic;
-	signal fwd_alu_op1, fwd_alu_op2		: data_word;
+	signal decode_alu_op1, decode_alu_op2	: data_word;
+	signal decode_rs1, decode_rs2		: integer;
+	--signal fwd_alu_op1, fwd_alu_op2		: data_word;
 
 	
 begin
@@ -122,7 +122,7 @@ begin
 		
 	JMP_UNIT:
 	
-	entity work.jump_unit port map( jmp.executeflag, fwd_alu_op1, -- fwd_alu_op1 is a modification!, and 
+	entity work.jump_unit port map( jmp.executeflag, id_ex_reg_out.alu_op1, -- fwd_alu_op1 is a modification!, and 
 									jmp.flag, jmp.address,
 									flush_fetch, flush_decode); 
 									--jmp.decodeflag, jmp.decodeaddress, removed!
@@ -165,10 +165,10 @@ begin
 	entity work.decode_logic port map(clk, reset, IF_ID_Reg,
 										ma_wb_reg_out.dest_reg_no, ma_wb_reg_out.result, ma_wb_reg_out.dest_reg_wr_flag,
 										PC, 
-										id_ex_reg_in.alu_op1, id_ex_reg_in.alu_op2, id_ex_reg_in.alu_opc,
+										decode_alu_op1, decode_alu_op2, id_ex_reg_in.alu_opc,
 										id_ex_reg_in.dest_reg_no, id_ex_reg_in.dest_reg_wr_flag, id_ex_reg_in.data_write_flag,
 										id_ex_reg_in.memInstType_flag, id_ex_reg_in.store_data_addr,
-										id_ex_reg_in.rs1, id_ex_reg_in.rs2
+										decode_rs1, decode_rs2
 										);
 										--jmp.decodeflag, jmp.decodeaddress
 	
@@ -189,7 +189,7 @@ begin
 	
 	EX:
 	
-	entity work.alu port map (id_ex_reg_out.alu_opc, fwd_alu_op1, fwd_alu_op2, 
+	entity work.alu port map (id_ex_reg_out.alu_opc, id_ex_reg_out.alu_op1, id_ex_reg_out.alu_op2, 
 								jmp.executeflag, ex_ma_reg_in.result );
 	
 	jmp.result						<= ex_ma_reg_in.result; -- alu result contains beq or bne jump address if taken
@@ -202,13 +202,14 @@ begin
 	
 	
 	FWD_UNIT:
-	entity work.forward_unit port map (id_ex_reg_out.rs1, id_ex_reg_out.rs2,
-										id_ex_reg_out.alu_op1, id_ex_reg_out.alu_op2,
+	entity work.forward_unit port map (decode_rs1, decode_rs2,
+										decode_alu_op1, decode_alu_op2,
+										id_ex_reg_out.dest_reg_wr_flag, id_ex_reg_out.dest_reg_no, ex_ma_reg_in.result,
 										ex_ma_reg_out.dest_reg_wr_flag, ex_ma_reg_out.dest_reg_no, ex_ma_reg_out.result,
 										ma_wb_reg_out.dest_reg_wr_flag, ma_wb_reg_out.dest_reg_no, ma_wb_reg_out.result,
-										fwd_alu_op1, fwd_alu_op2		
+										id_ex_reg_in.alu_op1, id_ex_reg_in.alu_op2		
 										);
-									
+									--id_ex..in has forwarded elements
 	
 	EX_MA: 
 	

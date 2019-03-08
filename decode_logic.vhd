@@ -68,7 +68,7 @@ begin
 	end process;
 	
 	-- decode logic
-	process(instr, rd, rs1, rs2 )  -- rd was not in the sensitivity list in the beginning!
+	process(instr, rd, rs1, rs2, reg_no )  -- rd was not in the sensitivity list in the beginning!
 	begin
 			
 			-- stefan says to be safe (latch), and that nothing is hanging and in a latched state
@@ -77,8 +77,10 @@ begin
 			reg_wr_en 			<= '0'; -- whether to touch the register bank for write
 			data_wr_en 			<= '0';
 			memInst_flag 		<= '0';
+			
 			--decode_jmpflag 		<= '0';
 			--decode_jmpaddress 	<= ZERO;
+			
 			ALU_OPC 			<= NOP;
 			ALU_OP1 <= ZERO;
 			ALU_OP2 <= ZERO;
@@ -107,6 +109,8 @@ begin
 							ALU_OPC <=XXOR;
 						when INSTR_MOV =>
 							ALU_OPC <=MOV;
+							rs_1 <= rd;
+							rs_2 <= rs1;
 						when INSTR_SLL =>
 							ALU_OPC <=SSLL;
 						when INSTR_SRL =>
@@ -129,7 +133,9 @@ begin
 							reg_wr_en <= '0'; -- for nop
 							ALU_OPC <= NOP; --!!
 					end case;
-					
+					ID_rd_no <= rd;
+						
+				
 				when OP_MEM => 
 					
 					ALU_OPC <= MOV;
@@ -158,9 +164,13 @@ begin
 						when others =>
 							ALU_OPC <= NOP; --!!
 					end case;
-
-				when OP_IMM => 
+					ID_rd_no <= rd;
 						
+				
+				when OP_IMM => 
+					rs_1 <= rd;
+					rs_2 <= rs1;	
+					
 					case instr(18 downto 15) is
 						when INSTR_MVI =>
 							ALU_OPC <= MOV;
@@ -180,12 +190,16 @@ begin
 						when others => 
 							ALU_OPC <= NOP; --!!
 					end case;
+					
+					ID_rd_no <= rd;
 					reg_wr_en <= '1';
 					
 				when OP_JMP => 
 					
 					rs_1 <= rd;
 					rs_2 <= rs1;
+					
+					ID_rd_no <= rd;
 					
 					case instr(18 downto 15) is
 						when INSTR_BEQ =>
@@ -208,6 +222,7 @@ begin
 							ALU_OP1	<= reg_no(rd);  -- this is forwarded
 							ALU_OP2 <= PC; -- the address to be saved
 							
+							ID_rd_no <= rs1;
 							reg_wr_en <= '1';
 							
 						when others =>
@@ -218,10 +233,7 @@ begin
 					--ALU_OPC <= NOP; --!!
 			end case;
 			
-			ID_rd_no <= rd;
-			ID_reg_wr_en <= reg_wr_en;	
-			
-			
+			ID_reg_wr_en <= reg_wr_en;
 	end process;
 	
 end architecture behave;

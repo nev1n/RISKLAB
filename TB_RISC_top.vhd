@@ -31,7 +31,7 @@ architecture TB_RISC_top_behave of TB_RISC_top is
 	
 	constant PERIOD             : time := 100 ns;
 	constant RESET_DELAY        : time := 200 ns;
-	constant SIMULATION_TIME    : time := 80000 ns;
+	constant SIMULATION_TIME    : time := 89000 ns;
 	
 	--! your top level MUST have the same interface as the example here!
 	component RISC_top is
