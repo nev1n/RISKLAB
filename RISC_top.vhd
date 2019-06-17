@@ -7,7 +7,7 @@
 --! - 32 bit data
 --! - 32 GP register
 --
---!@author: 
+--!@author: n33
 --------------------------------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all; -- import std_logic types
@@ -39,8 +39,6 @@ end entity RISC_top;
 
 architecture behave of RISC_top is
 
--- PUT YOUR CODE HERE!!!!
-	
 	-- record types for the pipeline registers
 	-- type for ID pipeline register
 	type ID_EX_Reg_Type is record
