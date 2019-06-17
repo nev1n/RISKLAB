@@ -5,11 +5,8 @@ use IEEE.std_logic_unsigned.all;
 --use IEEE.numeric_std.all;
 use work.RISC_lib.all;
 
-
 entity data_access is
-	port (
-		
-				
+	port (	
 		result        	: in data_word;	-- can be alu result,address for load or data for store (rs1 diverted through here)
 		memInstType	: in std_logic;	-- flag to detect if mem type instruction
 		data_write_en 	: in std_logic;	-- must connect to external write enable flag
@@ -19,7 +16,6 @@ entity data_access is
 		data_addr 	: out data_word;
 		write_en	: out std_logic;
 		data_to_mem	: out data_word
-		
 		);
 end entity data_access;
 
